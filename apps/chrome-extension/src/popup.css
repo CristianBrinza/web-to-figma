@@ -103,6 +103,16 @@ body {
   cursor: wait;
 }
 
+.button--secondary {
+  background: linear-gradient(135deg, #e8dcc7 0%, #cfba96 100%);
+  color: #2b2216;
+}
+
+.actions {
+  display: grid;
+  gap: 10px;
+}
+
 .panel--status {
   gap: 10px;
 }

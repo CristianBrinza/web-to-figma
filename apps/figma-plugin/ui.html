@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web to Figma Import</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        color: #1c1710;
+        background:
+          radial-gradient(circle at top left, rgba(80, 129, 255, 0.18), transparent 34%),
+          linear-gradient(180deg, #f3ede2 0%, #ece3d3 100%);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      .app {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+      }
+
+      .hero {
+        display: grid;
+        gap: 4px;
+      }
+
+      .eyebrow {
+        margin: 0;
+        color: #6d5631;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        line-height: 1.05;
+      }
+
+      .copy {
+        margin: 0;
+        color: #5a4d3a;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .panel {
+        display: grid;
+        gap: 12px;
+        padding: 14px;
+        border: 1px solid rgba(69, 52, 20, 0.14);
+        border-radius: 16px;
+        background: rgba(255, 251, 244, 0.82);
+        box-shadow: 0 14px 34px rgba(74, 53, 19, 0.08);
+      }
+
+      .field {
+        display: grid;
+        gap: 8px;
+      }
+
+      .field span,
+      .checkbox span {
+        font-size: 13px;
+        color: #584a36;
+      }
+
+      textarea {
+        width: 100%;
+        min-height: 200px;
+        resize: vertical;
+        border: 1px solid rgba(75, 58, 28, 0.22);
+        border-radius: 12px;
+        padding: 12px;
+        background: rgba(255, 255, 255, 0.92);
+        color: inherit;
+        font: 12px/1.5 "SFMono-Regular", "Consolas", monospace;
+      }
+
+      input[type="file"] {
+        width: 100%;
+        font-size: 12px;
+      }
+
+      .checkbox {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .actions {
+        display: grid;
+        gap: 10px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 16px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:disabled {
+        opacity: 0.6;
+        cursor: wait;
+      }
+
+      .button-primary {
+        background: linear-gradient(135deg, #2d5bff 0%, #1037c6 100%);
+        color: white;
+      }
+
+      .button-secondary {
+        background: linear-gradient(135deg, #e6d6be 0%, #ceb590 100%);
+        color: #241b10;
+      }
+
+      .status {
+        margin: 0;
+        min-height: 164px;
+        padding: 12px;
+        border-radius: 12px;
+        background: #16110b;
+        color: #f0eade;
+        font: 12px/1.5 "SFMono-Regular", "Consolas", monospace;
+        white-space: pre-wrap;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <p class="eyebrow">Web to Figma</p>
+        <h1>Import captured website</h1>
+        <p class="copy">Paste scene JSON from the Chrome extension or load a saved <code>.scene.json</code> file.</p>
+      </header>
+
+      <section class="panel">
+        <label class="field">
+          <span>Scene file</span>
+          <input id="fileInput" type="file" accept=".json,.scene.json,application/json">
+        </label>
+
+        <label class="field">
+          <span>Scene JSON</span>
+          <textarea id="jsonInput" placeholder="Paste the JSON exported by the Chrome extension here."></textarea>
+        </label>
+
+        <label class="checkbox">
+          <input id="importImages" type="checkbox" checked>
+          <span>Import remote images when possible</span>
+        </label>
+
+        <div class="actions">
+          <button id="importButton" class="button-primary" type="button">Import into Figma</button>
+          <button id="closeButton" class="button-secondary" type="button">Close</button>
+        </div>
+      </section>
+
+      <section class="panel">
+        <pre id="statusLog" class="status">Waiting for scene JSON.</pre>
+      </section>
+    </main>
+
+    <script>
+      const fileInput = document.getElementById("fileInput");
+      const jsonInput = document.getElementById("jsonInput");
+      const importImagesInput = document.getElementById("importImages");
+      const importButton = document.getElementById("importButton");
+      const closeButton = document.getElementById("closeButton");
+      const statusLog = document.getElementById("statusLog");
+
+      fileInput.addEventListener("change", async (event) => {
+        const file = event.target.files && event.target.files[0];
+
+        if (!file) {
+          return;
+        }
+
+        try {
+          const text = await file.text();
+          jsonInput.value = text;
+          setStatus(`Loaded ${file.name}. Ready to import.`);
+        } catch (error) {
+          setStatus(`Failed to read file.\n${error.message}`);
+        }
+      });
+
+      importButton.addEventListener("click", () => {
+        try {
+          const rawValue = jsonInput.value.trim();
+
+          if (!rawValue) {
+            throw new Error("Paste scene JSON or choose a file first.");
+          }
+
+          const scene = JSON.parse(rawValue);
+
+          if (!scene || !Array.isArray(scene.nodes)) {
+            throw new Error("The JSON does not look like a scene export.");
+          }
+
+          setBusy(true);
+          setStatus("Sending scene to the plugin runtime...");
+
+          parent.postMessage(
+            {
+              pluginMessage: {
+                type: "import-scene",
+                scene,
+                importImages: importImagesInput.checked
+              }
+            },
+            "*"
+          );
+        } catch (error) {
+          setStatus(`Import blocked.\n${error.message}`);
+        }
+      });
+
+      closeButton.addEventListener("click", () => {
+        parent.postMessage({ pluginMessage: { type: "close-plugin" } }, "*");
+      });
+
+      window.onmessage = (event) => {
+        const message = event.data.pluginMessage;
+
+        if (!message || typeof message.type !== "string") {
+          return;
+        }
+
+        if (message.type === "status") {
+          setStatus(message.text);
+          return;
+        }
+
+        if (message.type === "import-error") {
+          setBusy(false);
+          setStatus(`Import failed.\n${message.message}`);
+          return;
+        }
+
+        if (message.type === "import-complete") {
+          setBusy(false);
+
+          const lines = [
+            `Imported: ${message.importedCount} layers`,
+            `Frames: ${message.frameCount}`,
+            `Text: ${message.textCount}`,
+            `Images: ${message.imageCount}`,
+            `Image failures: ${message.imageFailures}`,
+            `Source: ${message.sourceUrl}`
+          ];
+
+          if (Array.isArray(message.warnings) && message.warnings.length > 0) {
+            lines.push("");
+            lines.push("Warnings:");
+            lines.push(...message.warnings.slice(0, 12).map((warning) => `- ${warning}`));
+
+            if (message.warnings.length > 12) {
+              lines.push(`- ${message.warnings.length - 12} more warnings not shown`);
+            }
+          }
+
+          setStatus(lines.join("\n"));
+        }
+      };
+
+      function setBusy(isBusy) {
+        importButton.disabled = isBusy;
+        importButton.textContent = isBusy ? "Importing..." : "Import into Figma";
+      }
+
+      function setStatus(text) {
+        statusLog.textContent = text;
+      }
+    </script>
+  </body>
+</html>

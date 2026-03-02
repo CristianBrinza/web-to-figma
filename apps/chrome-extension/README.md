@@ -6,7 +6,7 @@ It does one job:
 
 - capture the current tab's visible page structure
 - normalize it into a scene JSON
-- download that JSON for the future Figma plugin importer
+- hand that JSON to the Figma plugin by download or clipboard
 
 ## What it captures
 
@@ -37,11 +37,10 @@ It does one job:
 1. Open any normal website tab.
 2. Click the extension icon.
 3. Set `Max nodes` and whether to include images.
-4. Click `Capture active tab`.
-5. Save the generated `.scene.json` file.
+4. Click `Capture + Download` to save a `.scene.json` file, or `Capture + Copy JSON` to paste directly into the Figma plugin.
 
 ## Notes
 
 - Browser internal pages like `chrome://` cannot be captured.
 - The output is intentionally a normalized scene model, not raw HTML.
-- The next step is a Figma plugin that reads this JSON and creates Figma nodes.
+- The paired Figma importer now lives in `/Users/cristian/Documents/GitHub/web-to-figma/apps/figma-plugin`.

@@ -1,4 +1,5 @@
-const captureButton = document.getElementById("captureButton");
+const downloadButton = document.getElementById("downloadButton");
+const copyButton = document.getElementById("copyButton");
 const includeImagesInput = document.getElementById("includeImages");
 const maxNodesInput = document.getElementById("maxNodes");
 const statusLabel = document.getElementById("status");
@@ -14,7 +15,15 @@ init().catch((error) => {
   setSummary(`Unable to initialize popup.\n${error.message}`);
 });
 
-captureButton.addEventListener("click", async () => {
+downloadButton.addEventListener("click", async () => {
+  await runCapture("download");
+});
+
+copyButton.addEventListener("click", async () => {
+  await runCapture("copy");
+});
+
+async function runCapture(mode) {
   setBusy(true);
   setStatus("Capturing");
 
@@ -40,7 +49,16 @@ captureButton.addEventListener("click", async () => {
     }
 
     const filename = buildFilename(scene);
-    await downloadScene(scene, filename);
+    const json = JSON.stringify(scene, null, 2);
+
+    if (mode === "copy") {
+      await copySceneToClipboard(json);
+      setStatus("Copied");
+      setSummary(formatCaptureSummary(scene, "Copied scene JSON to clipboard."));
+      return;
+    }
+
+    await downloadScene(json, filename);
 
     setStatus("Done");
     setSummary(formatCaptureSummary(scene, filename));
@@ -50,7 +68,7 @@ captureButton.addEventListener("click", async () => {
   } finally {
     setBusy(false);
   }
-});
+}
 
 async function init() {
   const { captureOptions } = await chrome.storage.local.get("captureOptions");
@@ -62,8 +80,10 @@ async function init() {
 }
 
 function setBusy(isBusy) {
-  captureButton.disabled = isBusy;
-  captureButton.textContent = isBusy ? "Capturing..." : "Capture active tab";
+  downloadButton.disabled = isBusy;
+  copyButton.disabled = isBusy;
+  downloadButton.textContent = isBusy ? "Capturing..." : "Capture + Download";
+  copyButton.textContent = isBusy ? "Capturing..." : "Capture + Copy JSON";
 }
 
 function setStatus(text) {
@@ -106,8 +126,7 @@ function validateTab(tab) {
   }
 }
 
-async function downloadScene(scene, filename) {
-  const json = JSON.stringify(scene, null, 2);
+async function downloadScene(json, filename) {
   const blob = new Blob([json], { type: "application/json" });
   const objectUrl = URL.createObjectURL(blob);
 
@@ -120,6 +139,14 @@ async function downloadScene(scene, filename) {
   } finally {
     setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
   }
+}
+
+async function copySceneToClipboard(json) {
+  if (!navigator.clipboard || typeof navigator.clipboard.writeText !== "function") {
+    throw new Error("Clipboard access is not available in this browser context.");
+  }
+
+  await navigator.clipboard.writeText(json);
 }
 
 function buildFilename(scene) {
@@ -145,7 +172,7 @@ function formatCaptureSummary(scene, filename) {
   const counts = countNodeTypes(scene.nodes);
 
   return [
-    `Saved: ${filename}`,
+    `Output: ${filename}`,
     `Title: ${scene.title}`,
     `URL: ${scene.sourceUrl}`,
     `Viewport: ${scene.viewport.width} x ${scene.viewport.height}`,

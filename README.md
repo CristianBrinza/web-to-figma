@@ -4,12 +4,14 @@ Build your own `html.to.design` style workflow:
 
 - A Chrome extension reads the active page and exports a normalized scene model.
 - A Figma plugin imports that scene model and recreates it as editable Figma nodes.
-- A small backend is optional for productizing the handoff, but not required for the first MVP.
+- This repo currently keeps the product as two local apps only: Chrome extension plus Figma plugin.
 
 Start with the implementation guide:
 
 - [docs/web-to-figma-guide.md](docs/web-to-figma-guide.md)
+- [docs/chrome-web-store-publish-guide.md](docs/chrome-web-store-publish-guide.md)
 - [apps/chrome-extension/README.md](apps/chrome-extension/README.md)
+- [apps/figma-plugin/README.md](apps/figma-plugin/README.md)
 
 Recommended build order:
 

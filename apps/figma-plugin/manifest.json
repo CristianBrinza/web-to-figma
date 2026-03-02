@@ -1,0 +1,18 @@
+{
+  "name": "Web to Figma Import",
+  "id": "web-to-figma-local-importer",
+  "api": "1.0.0",
+  "editorType": [
+    "figma"
+  ],
+  "main": "code.js",
+  "ui": "ui.html",
+  "documentAccess": "dynamic-page",
+  "networkAccess": {
+    "allowedDomains": [
+      "*"
+    ],
+    "reasoning": "The plugin imports images from arbitrary website domains captured by the paired Chrome extension.",
+    "devAllowedDomains": []
+  }
+}
