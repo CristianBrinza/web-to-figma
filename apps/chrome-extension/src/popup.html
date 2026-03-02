@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shades Web2Figma </title>
+    <link rel="stylesheet" href="./popup.css">
+    <script src="./popup.js" defer></script>
+  </head>
+  <body>
+    <main class="app">
+      <header class="hero">
+        <p class="eyebrow">Web to Figma</p>
+        <h1>Capture page design</h1>
+        <p class="copy">Export the current tab as scene JSON for your Figma importer.</p>
+      </header>
+
+      <section class="panel">
+        <label class="field">
+          <span>Max nodes</span>
+          <input id="maxNodes" type="number" min="100" max="5000" step="50" value="1200">
+        </label>
+
+        <label class="checkbox">
+          <input id="includeImages" type="checkbox" checked>
+          <span>Include image nodes</span>
+        </label>
+
+        <button id="captureButton" class="button" type="button">Capture active tab</button>
+      </section>
+
+      <section class="panel panel--status">
+        <div class="status-row">
+          <span>Status</span>
+          <strong id="status">Idle</strong>
+        </div>
+        <pre id="summary" class="summary">No capture yet.</pre>
+      </section>
+    </main>
+  </body>
+</html>

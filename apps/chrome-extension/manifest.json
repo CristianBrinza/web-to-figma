@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Shades Web2Figma",
+  "version": "0.1.0",
+  "description": "Capture the active page into a scene JSON that can be imported into Figma.",
+  "permissions": [
+    "activeTab",
+    "downloads",
+    "scripting",
+    "storage"
+  ],
+  "action": {
+    "default_title": "Shades Web2Figma",
+    "default_popup": "src/popup.html"
+  },
+  "background": {
+    "service_worker": "src/background.js"
+  }
+}
